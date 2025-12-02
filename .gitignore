@@ -1,0 +1,40 @@
+### Node ###
+# Logi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Zależności
+/node_modules
+/.pnp
+.pnp.js
+
+# Katalogi kompilacyjne i tymczasowe
+/dist
+/build
+/tmp
+
+# Zmienne środowiskowe i klucze
+.env
+.env.*
+.DS_Store
+*.pem
+
+# Testy (jeśli generują pliki tymczasowe)
+/coverage
+/.nyc_output
+
+### TypeScript ###
+*.tsbuildinfo
+*.js.map
+!dist/**/*.js
+
+### IDE (IntelliJ IDEA) ###
+# IntelliJ IDEA
+.idea/
+# Lokalnie zapisane konfiguracje uruchomieniowe
+*.iml
+*.iws
+*.ipr
