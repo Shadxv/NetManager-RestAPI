@@ -1,4 +1,4 @@
 'use strict';
 
-export * from './role';
-export * from './user';
+export * from './role.db';
+export * from './user.db';

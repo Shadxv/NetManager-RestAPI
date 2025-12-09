@@ -41,19 +41,13 @@ const UserSchema: Schema = new Schema(
             required: false,
             trim: true,
         },
-        tempPasswordHash: {
+        password: {
             type: String,
-            required: false,
+            required: true,
         },
         tempPasswordExpires: {
             type: Date,
             required: false,
-        },
-        publicKey: {
-            type: String,
-            required: false,
-            unique: true,
-            sparse: true,
         },
     },
     {

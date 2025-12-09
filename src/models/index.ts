@@ -1,4 +1,5 @@
 'use strict';
 
-export * from './user';
-export * from './role';
+export * from './user.model';
+export * from './role.model';
+export * from './auth.model';
