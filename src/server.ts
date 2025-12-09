@@ -4,6 +4,7 @@ import cors from 'cors';
 import { connect as connectDatabase } from '@db/mongodb';
 import { v1Router } from '@/controllers';
 import * as process from 'node:process';
+import { initializeSystemUserAndRole } from '@/utils';
 
 const morgan = require('morgan');
 
@@ -30,6 +31,7 @@ async function startServer() {
         console.log('Attempting to connect to database...');
         await connectDatabase();
         console.log('Database connection successful.');
+        await initializeSystemUserAndRole();
 
         app.listen(PORT, HOST, () => {
             console.log(`Server is running on http://127.0.0.1:${PORT} (Listening on ${HOST})`);

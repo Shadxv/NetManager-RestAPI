@@ -23,6 +23,7 @@ export function newUser(
     roleId?: string,
     tempPasswordDuration?: string,
     createdBy?: string,
+    tempPassword?: string,
 ): {
     user: {
         email: string;
@@ -33,7 +34,7 @@ export function newUser(
     };
     password: string;
 } {
-    const password = generateRandomPassword();
+    const password = tempPassword || generateRandomPassword();
     const hash = crypto.hash('sha256', password);
     return {
         user: {
