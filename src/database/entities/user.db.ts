@@ -1,6 +1,6 @@
 'use strict';
 
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 import { User } from '@/models';
 
 const UserSchema: Schema = new Schema(
@@ -55,4 +55,4 @@ const UserSchema: Schema = new Schema(
     },
 );
 
-export const Users = model<User>('User', UserSchema, 'users');
+export const Users = models.User || model<User>('User', UserSchema, 'users');

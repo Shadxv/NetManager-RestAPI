@@ -51,7 +51,6 @@ export function calculateExpirationDate(durationString?: string): Date {
     try {
         ms = durationString ? durationToMilliseconds(durationString) : durationToMilliseconds();
     } catch (e) {
-        console.error(e);
         ms = durationToMilliseconds();
     }
     return new Date(Date.now() + ms);

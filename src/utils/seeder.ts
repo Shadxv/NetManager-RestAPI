@@ -1,26 +1,25 @@
 'use strict';
 
-import { newUser } from '@/models';
+import { newUser, Role } from '@/models';
 import { Roles, Users } from '@db/entities';
 import { PermissionFlags } from '@/constants';
 
 const DEFAULT_EMAIL = 'admin';
 const DEFAULT_TEMP_PASSWORD = 'admin';
-const SYSTEM_ROLE_ID = 'system';
 
-async function createSystemRole() {
+async function createSystemRole(): Promise<Role> {
     const systemRole = {
-        roleId: SYSTEM_ROLE_ID,
         name: 'System Administrator',
-        permissions: PermissionFlags.ROOT,
+        permissions: PermissionFlags.ADMIN,
         index: 0,
     };
 
-    await Roles.insertOne(systemRole);
+    const role = await Roles.insertOne(systemRole);
     console.log(`[SEEDER] Role ${systemRole.name} has been created.`);
+    return role;
 }
 
-async function createSystemUser() {
+async function createSystemUser(role: Role) {
     const createdUser: {
         user: {
             email: string;
@@ -29,7 +28,7 @@ async function createSystemUser() {
             tempPasswordExpires: Date;
             createdBy: string;
         };
-    } = newUser(DEFAULT_EMAIL, SYSTEM_ROLE_ID, DEFAULT_TEMP_PASSWORD);
+    } = newUser(DEFAULT_EMAIL, role.id, DEFAULT_TEMP_PASSWORD);
 
     await Users.insertOne(createdUser.user);
     console.log('[SEEDER] Created default user.');
@@ -37,16 +36,21 @@ async function createSystemUser() {
 
 export async function initializeSystemUserAndRole(): Promise<void> {
     try {
-        const existingRole = await Roles.findOne({ roleId: SYSTEM_ROLE_ID });
+        const existingRole = await Roles.countDocuments();
+        let role: Role | null;
 
         if (!existingRole) {
-            await createSystemRole();
+            role = await createSystemRole();
+        } else {
+            role = await Roles.findOne({ index: 0 });
         }
+
+        if (!role) throw new Error('system role not created nor found');
 
         const existingAdmin = await Users.findOne({ email: DEFAULT_EMAIL });
 
         if (!existingAdmin) {
-            await createSystemUser();
+            await createSystemUser(role);
         }
     } catch (error) {
         console.error('[SEEDER] Init error:', error);

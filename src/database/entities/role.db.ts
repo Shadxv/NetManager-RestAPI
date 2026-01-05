@@ -1,20 +1,15 @@
 'use strict';
 
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 import { Role } from '@/models';
 
-const RoleSchema: Schema = new Schema(
+const RoleSchema = new Schema<Role>(
     {
-        roleId: {
-            type: String,
-            required: true,
-            unique: true,
-            uppercase: true,
-        },
         name: {
             type: String,
             required: true,
             trim: true,
+            default: 'untitled',
         },
         color: {
             type: String,
@@ -29,12 +24,20 @@ const RoleSchema: Schema = new Schema(
         index: {
             type: Number,
             required: true,
-            default: 100,
+            index: true,
         },
     },
     {
         timestamps: true,
+        toJSON: {
+            virtuals: true,
+            versionKey: false,
+            transform: (_, ret) => {
+                ret.id = ret._id.toString();
+            },
+        },
+        toObject: { virtuals: true },
     },
 );
 
-export const Roles = model<Role>('Role', RoleSchema, 'roles');
+export const Roles = models.Role || model<Role>('Role', RoleSchema, 'roles');
