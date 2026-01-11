@@ -3,7 +3,7 @@
 import { Schema, model, models } from 'mongoose';
 import { User } from '@/models';
 
-const UserSchema: Schema = new Schema(
+const UserSchema: Schema = new Schema<User>(
     {
         email: {
             type: String,
@@ -21,7 +21,7 @@ const UserSchema: Schema = new Schema(
             type: String,
             required: true,
         },
-        aditionalPermissions: {
+        additionalPermissions: {
             type: [String],
             required: true,
             default: [],
@@ -41,6 +41,11 @@ const UserSchema: Schema = new Schema(
             required: false,
             trim: true,
         },
+        avatar: {
+            type: String,
+            required: false,
+            trim: true,
+        },
         password: {
             type: String,
             required: true,
@@ -52,6 +57,14 @@ const UserSchema: Schema = new Schema(
     },
     {
         timestamps: true,
+        toJSON: {
+            virtuals: true,
+            versionKey: false,
+            transform: (_, ret) => {
+                ret.id = ret._id.toString();
+            },
+        },
+        toObject: { virtuals: true },
     },
 );
 

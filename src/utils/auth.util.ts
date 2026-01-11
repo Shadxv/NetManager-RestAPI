@@ -8,7 +8,7 @@ export function generateToken(user: User, role?: Role): string {
     const payload: TokenPayload = {
         sub: user._id.toString(),
         rolePermissions: role?.permissions || 0,
-        aditionalPermissions: user.aditionalPermissions,
+        additionalPermissions: user.additionalPermissions,
         requiresPasswordReset: !user.isProvisioned,
     };
 

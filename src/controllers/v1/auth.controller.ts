@@ -33,7 +33,7 @@ router.post('/', async (req: Request, res: Response) => {
             return await handleTempAuth(user, role, res);
         }
     } catch (error) {
-        return res.status(500);
+        return res.status(500).send();
     }
 });
 
@@ -43,7 +43,7 @@ async function handleTempAuth(
     res: Response,
 ): Promise<Response<any, Record<string, any>>> {
     if (user.tempPasswordExpires && user.tempPasswordExpires.getTime() < Date.now()) {
-        return res.status(410);
+        return res.status(410).send();
     }
 
     return res

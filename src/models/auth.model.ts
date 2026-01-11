@@ -2,6 +2,6 @@ import { JwtPayload } from 'jsonwebtoken';
 
 export interface TokenPayload extends JwtPayload {
     rolePermissions: number;
-    aditionalPermissions: string[];
+    additionalPermissions: string[];
     requiresPasswordReset?: boolean;
 }

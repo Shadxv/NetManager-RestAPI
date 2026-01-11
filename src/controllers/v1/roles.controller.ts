@@ -45,7 +45,7 @@ router.get(
 
         const role = await Roles.findById(id);
 
-        if (!role) return res.status(404);
+        if (!role) return res.status(404).send();
         return res.status(200).json(role);
     }),
 );
@@ -56,7 +56,7 @@ router.delete(
         const id = req.params.id;
 
         const roleToDelete = await Roles.findByIdAndDelete(id);
-        if (!roleToDelete) return res.status(404);
+        if (!roleToDelete) return res.status(404).send();
 
         const deletedIndex = roleToDelete.index;
 
