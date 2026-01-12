@@ -151,3 +151,43 @@ export const generateInviteEmail = (data: InviteData): string => {
         contentHtml: bodyContent,
     });
 };
+
+export const generateResetPasswordEmail = (data: InviteData): string => {
+    const borderStyle = '1px solid ' + COLORS.secondaryWhite;
+
+    const bodyContent = `
+    <h1 style="color: ${COLORS.primaryBlack}; font-size: 32px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.03em;">Password Reset</h1>
+    <p style="color: ${COLORS.secondaryBlack}; font-size: 16px; line-height: 1.6; margin: 0 0 40px 0;">
+      A password reset has been requested for your NetManager account. Please use the temporary credentials provided below to log in and set your new permanent password.
+    </p>
+    
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 40px; border-bottom: ${borderStyle}; padding-bottom: 32px;">
+      <tr>
+        <td>
+          <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; color: ${COLORS.secondaryGray}; letter-spacing: 0.1em;">Temporary Password</p>
+          <div style="font-size: 28px; color: ${COLORS.accent}; font-weight: 700; font-family: 'Poppins', sans-serif;">
+            ${data.tempPass}
+          </div>
+          <p style="margin: 12px 0 0 0; font-size: 14px; color: ${COLORS.secondaryGray};">
+            For security reasons, this password will expire on <span style="color: ${COLORS.primaryBlack}; font-weight: 600;">${data.expiryDate}</span>.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>
+          <a href="${data.panelUrl}" 
+             style="display: inline-block; background-color: ${COLORS.accent}; color: #ffffff; padding: 8px 36px; text-decoration: none; border-radius: 16px; font-weight: 600; font-size: 16px; text-align: center;">
+             Reset password
+          </a>
+        </td>
+      </tr>
+    </table>
+  `;
+
+    return generateEmailLayout({
+        contentHtml: bodyContent,
+    });
+};

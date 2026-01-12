@@ -5,7 +5,7 @@ import { Roles, Users } from '@db/entities';
 import { PermissionFlags } from '@/constants';
 
 const DEFAULT_EMAIL = 'admin';
-const DEFAULT_TEMP_PASSWORD = 'admin';
+const DEFAULT_TEMP_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'admin123';
 
 async function createSystemRole(): Promise<Role> {
     const systemRole = {
@@ -28,7 +28,7 @@ async function createSystemUser(role: Role) {
             tempPasswordExpires: Date;
             createdBy: string;
         };
-    } = newUser(DEFAULT_EMAIL, role.id, DEFAULT_TEMP_PASSWORD);
+    } = await newUser(DEFAULT_EMAIL, role.id, undefined, undefined, DEFAULT_TEMP_PASSWORD);
 
     await Users.insertOne(createdUser.user);
     console.log('[SEEDER] Created default user.');

@@ -2,19 +2,15 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
-import { validateToken } from '@/utils';
 import { TokenPayload } from '@/models';
+import { validateToken } from '@/utils';
 
 export function authenticateToken(allowTempUser: boolean = false) {
     return (req: Request, res: Response, next: NextFunction) => {
         const authHeader = req.headers.authorization;
 
-        if (!authHeader) {
-            return res.status(403);
-        }
-
-        if (!authHeader.startsWith('Bearer ')) {
-            return res.status(403);
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(403).json({ message: 'Access denied' });
         }
 
         const token = authHeader.split(' ')[1];
@@ -29,18 +25,10 @@ export function authenticateToken(allowTempUser: boolean = false) {
             req.user = decodedPayload;
             next();
         } catch (error) {
-            if (error instanceof TokenExpiredError) {
-                return res.status(401);
-            }
+            if (error instanceof TokenExpiredError) return res.status(401).send();
+            if (error instanceof JsonWebTokenError) return res.status(403).send();
 
-            if (error instanceof JsonWebTokenError) {
-                return res.status(403);
-            }
-
-            console.error('Unhandled token validation error:', error);
-            return res
-                .status(500)
-                .json({ message: 'Authentication process failed due to server error.' });
+            return res.status(500).json({ message: 'Internal server error' });
         }
     };
 }
