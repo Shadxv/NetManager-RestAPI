@@ -31,8 +31,6 @@ export const asyncQuery = (fn: Function) => {
                 message = 'Validation failed.';
             }
 
-            console.error(`[API Error] ${status}: ${error.name} | ${message}`, error);
-
             return res.status(status).json({
                 message: message,
             });

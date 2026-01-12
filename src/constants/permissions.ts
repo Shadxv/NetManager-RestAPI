@@ -37,5 +37,4 @@ export enum PermissionFlags {
     EDIT_ROLES = 1 << 20,
     CREATE_ROLES = 1 << 21,
     DELETE_ROLES = 1 << 22,
-    APPLY_ROLES = 1 << 23,
 }

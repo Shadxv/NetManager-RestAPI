@@ -8,6 +8,7 @@ export function generateToken(user: User, role?: Role): string {
     const payload: TokenPayload = {
         sub: user.id,
         roleId: role?.id,
+        roleIndex: role?.index,
         rolePermissions: role?.permissions || 0,
         additionalPermissions: user.additionalPermissions,
         requiresPasswordReset: !user.isProvisioned,
@@ -22,12 +23,13 @@ export function validateToken(token: string): TokenPayload {
     return jwt.verify(token, JWT_SECRET) as unknown as TokenPayload;
 }
 
-export function generateRefreshedToken(user: any, role: any, originalExp: number): string {
+export function generateRefreshedToken(user: User, role: Role, originalExp: number): string {
     if (!JWT_SECRET) throw new Error('JWT_SECRET_NOT_SET');
 
     const payload: TokenPayload = {
         sub: user.id,
         roleId: role?.id,
+        roleIndex: role?.index,
         rolePermissions: role?.permissions ?? 0,
         additionalPermissions: Array.isArray(user.additionalPermissions)
             ? user.additionalPermissions

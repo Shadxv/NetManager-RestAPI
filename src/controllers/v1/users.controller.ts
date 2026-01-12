@@ -1,8 +1,8 @@
 'use strict';
 
-import { Router, Request, Response } from 'express';
-import { Users } from '@db/entities';
-import { User, newUser, BaseUser } from '@/models';
+import { Request, Response, Router } from 'express';
+import { Roles, Users } from '@db/entities';
+import { BaseUser, newUser, User } from '@/models';
 import { authenticateToken } from '@/middleware/auth.middleware';
 import { asyncQuery } from '@db/mongodb';
 import {
@@ -12,10 +12,12 @@ import {
     sendEmail,
 } from '@/utils';
 import bcrypt from 'bcrypt';
+import { authorize } from '@/middleware';
+import { PermissionFlags } from '@/constants';
 
 const router: Router = Router();
 
-//router.use(authenticateToken());
+router.use(authenticateToken());
 
 router.get(
     '/',
@@ -52,6 +54,12 @@ router.get(
 
 router.get(
     '/:id',
+    authorize([
+        PermissionFlags.SEE_USERS_DETAILS,
+        PermissionFlags.MANAGE_USERS,
+        PermissionFlags.REMOVE_USERS,
+        PermissionFlags.EDIT_USERS_DETAILS,
+    ]),
     asyncQuery(async (req: Request, res: Response) => {
         const user: User | null = await Users.findById(req.params.id);
         if (!user) return res.status(404);
@@ -88,10 +96,35 @@ router.get(
     }),
 );
 
+router.get(
+    '/:id/created-by',
+    asyncQuery(async (req: Request, res: Response) => {
+        const user: User | null = await Users.findById(req.params.id);
+        if (!user) return res.status(404);
+
+        const { id, email, name, surname, avatar } = user;
+
+        return res.status(200).json({
+            id,
+            email,
+            name,
+            surname,
+            avatar,
+        });
+    }),
+);
+
 router.patch(
     '/:id',
+    authorize([PermissionFlags.EDIT_USERS_DETAILS, PermissionFlags.MANAGE_USERS]),
     asyncQuery(async (req: Request, res: Response) => {
         const { id } = req.params;
+        const user = await validateUserHierarchy(req, res, id);
+
+        if (!user) {
+            return;
+        }
+
         const updates = req.body;
 
         const allowedFields = ['roleId', 'additionalPermissions'];
@@ -100,13 +133,16 @@ router.patch(
 
         if (isInvalid) return res.status(400).send();
 
+        const roleValidation = await validateRoleAssignment(req, res, updates.roleId);
+        if (!roleValidation) {
+            return;
+        }
+
         const updatedUser = await Users.findByIdAndUpdate(
             id,
             { $set: updates },
             { new: true, runValidators: true },
         );
-
-        if (!updatedUser) return res.status(404).send();
 
         const { roleId, additionalPermissions } = updatedUser;
 
@@ -119,6 +155,7 @@ router.patch(
 
 router.post(
     '/',
+    authorize([PermissionFlags.CREATE_USERS, PermissionFlags.MANAGE_USERS]),
     asyncQuery(async (req: Request, res: Response) => {
         const { email, roleId, duration = '1d' } = req.body;
 
@@ -131,11 +168,17 @@ router.post(
             return res.status(409).json({ message: 'User with this email already exists' });
         }
 
+        const roleValidation = await validateRoleAssignment(req, res, roleId);
+
+        if (!roleValidation) {
+            return;
+        }
+
         const { user: userData, password: rawPassword } = await newUser(
             email,
             roleId,
             duration,
-            req.user?.id,
+            req.user?.sub,
         );
 
         const savedUser = await Users.create(userData);
@@ -183,18 +226,16 @@ router.post(
 
 router.delete(
     '/:id',
+    authorize([PermissionFlags.REMOVE_USERS, PermissionFlags.MANAGE_USERS]),
     asyncQuery(async (req: Request, res: Response) => {
         const { id } = req.params;
-
-        if (!id) {
-            return res.status(400).json({ message: 'User ID is required' });
-        }
-
-        const user = await Users.findByIdAndDelete(id);
+        const user = await validateUserHierarchy(req, res, id);
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return;
         }
+
+        await Users.findByIdAndDelete(id);
 
         return res.status(200).send();
     }),
@@ -202,12 +243,13 @@ router.delete(
 
 router.post(
     '/:id/reset-password',
+    authorize([PermissionFlags.MANAGE_USERS, PermissionFlags.MANAGE_USERS]),
     asyncQuery(async (req: Request, res: Response) => {
         const { id } = req.params;
 
-        const user = await Users.findById(id);
+        const user = await validateUserHierarchy(req, res, id);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return;
         }
 
         const now = new Date();
@@ -246,6 +288,70 @@ router.post(
         return res.status(200).json({ message: 'Reset email sent' });
     }),
 );
+
+export const validateUserHierarchy = async (req: Request, res: Response, targetUserId: string) => {
+    const currentUser = req.user;
+
+    if (!currentUser) {
+        res.status(403).json({ message: 'Token payload not found' });
+        return null;
+    }
+
+    if (targetUserId === currentUser.sub) {
+        res.status(403).json({ message: 'You cannot perform this action on yourself' });
+        return null;
+    }
+
+    const isRoot = (currentUser.rolePermissions & 1) === 1;
+
+    const targetUser = await Users.findById(targetUserId);
+    if (!targetUser) {
+        res.status(404).json({ message: 'User not found' });
+        return null;
+    }
+
+    if (!isRoot) {
+        const targetRole = await Roles.findById(targetUser.roleId);
+        const targetRoleIndex = targetRole?.index ?? 1000;
+        const currentUserRoleIndex = currentUser.roleIndex ?? 999;
+
+        if (targetRoleIndex <= currentUserRoleIndex) {
+            res.status(403).json({
+                message: 'You cannot perform actions on users with a higher or equal role rank',
+            });
+            return null;
+        }
+    }
+
+    return targetUser;
+};
+
+export const validateRoleAssignment = async (req: any, res: Response, newRoleId: string) => {
+    const currentUser = req.user;
+
+    if (!currentUser) {
+        res.status(403).json({ message: 'Token payload not found' });
+        return false;
+    }
+
+    const newRole = await Roles.findById(newRoleId);
+    if (!newRole) {
+        res.status(404).json({ message: 'Target role not found' });
+        return false;
+    }
+
+    const currentUserRoleIndex = currentUser.roleIndex ?? 999;
+    const targetRoleIndex = newRole.index ?? 1000;
+
+    if (targetRoleIndex <= currentUserRoleIndex) {
+        res.status(403).json({
+            message: 'You cannot assign a role with a rank higher or equal to your own',
+        });
+        return false;
+    }
+
+    return true;
+};
 
 // TEMP
 router.patch(
