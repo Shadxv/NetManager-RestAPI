@@ -27,7 +27,7 @@ router.post(
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const role = user.roleId ? await Roles.findOne({ roleId: user.roleId }) : undefined;
+        const role = user.roleId ? await Roles.findById(user.roleId) : undefined;
 
         if (
             !user.isProvisioned &&

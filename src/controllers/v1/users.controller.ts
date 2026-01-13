@@ -334,14 +334,14 @@ export const validateRoleAssignment = async (req: any, res: Response, newRoleId:
         return false;
     }
 
-    const newRole = await Roles.findById(newRoleId);
-    if (!newRole) {
+    const newRole = newRoleId ? await Roles.findById(newRoleId) : undefined;
+    if (!newRole && newRoleId) {
         res.status(404).json({ message: 'Target role not found' });
         return false;
     }
 
     const currentUserRoleIndex = currentUser.roleIndex ?? 999;
-    const targetRoleIndex = newRole.index ?? 1000;
+    const targetRoleIndex = newRole?.index ?? 1000;
 
     if (targetRoleIndex <= currentUserRoleIndex) {
         res.status(403).json({
