@@ -45,7 +45,7 @@
         "typescript": "^5.9.3"
     },
     "_moduleAliases": {
-        "@db": "build/db",
+        "@db": "build/database",
         "@": "build/"
     }
 }
